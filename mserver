@@ -1,0 +1,15 @@
+# Compiler
+CC = gcc
+
+# Compiler flags
+CFLAGS = -Wall -pthread
+
+# Targets
+server: server.c
+    $(CC) $(CFLAGS) -o server server.c
+
+run_server: server
+    ./server
+
+clean_server:
+    rm -f server

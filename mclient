@@ -1,0 +1,15 @@
+# Compiler
+CC = gcc
+
+# Compiler flags
+CFLAGS = -Wall
+
+# Targets
+client: client.c
+    $(CC) $(CFLAGS) -o client client.c
+
+run_client: client
+    ./client
+
+clean_client:
+    rm -f client
