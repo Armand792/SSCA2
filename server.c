@@ -23,7 +23,7 @@ void handle_client(void *arg) {
 
     bytes_received = recv(client_sock, Authorization, sizeof(Authorization), 0);
         if (bytes_received < 0) {
-        perror("Error while receiving data");
+        perror("Server: Error while receiving data");
     
         }
 
@@ -34,7 +34,7 @@ void handle_client(void *arg) {
     char *filepath = strtok(NULL, ":");
 
     if (uid_str == NULL || gid_str == NULL || filepath == NULL) {
-    perror("Error parsing received data");
+    perror("Server: Error parsing received data");
     exit(EXIT_FAILURE);
     }
 
@@ -47,41 +47,46 @@ void handle_client(void *arg) {
 
     if (stat(directory_path, &dir_stat) == 0) {
         if(dir_stat.st_uid != uid || dir_stat.st_gid != gid) {
-            message_to_client = "Authorization failure: UID or GID do not match";
+            message_to_client = "Server: Authorization failure: UID or GID do not match";
             send(client_sock, message_to_client, strlen(message_to_client), 0);
             exit(EXIT_FAILURE);
         }else{
-            printf("UID and GID match, you are authorize to access\n");
+            printf("Server: UID and GID match, you are authorize to access\n");
             message_to_client = "yes";
             send(client_sock, message_to_client, strlen(message_to_client), 0);
         }
     } else {
-        perror("Error getting directory information");
+        perror("Server: Error getting directory information");
         exit(EXIT_FAILURE);
     }
 
-
+    printf("63\n");
     // Create or open the file for writing received data
-    received_file = fopen(filepath, "ab"); // Open the file for binary writing
-
+    received_file = fopen("/Users/armando/Desktop/SSCA2/SSCA2/Manufacturing/test.txt", "w"); // Open the file for writing
+    printf("66\n");
     if (received_file == NULL) {
-        perror("Couldn't create the file for writing");
+        perror("Server: Couldn't create the file for writing");
         message_to_client = "Transfer failed";
         send(client_sock, message_to_client, strlen(message_to_client), 0); 
     }
-
+    printf("72\n");
     // Receive data from the client and write it to the file
-    while ((bytes_received = recv(client_sock, file_buffer, sizeof(file_buffer), 0)) > 0) {
-        fwrite(file_buffer, 1, bytes_received, received_file);
-    }
-
+    bytes_received = recv(client_sock, file_buffer, sizeof(file_buffer), 0);
+        printf("Reading data or waiting at least\n");
+        size_t bytes_written = fwrite(file_buffer, 1, bytes_received, received_file);
+        printf("Data got written\n");
+        if (bytes_written != bytes_received) {
+            perror("Server: Error writing to file");
+        }
+    
+    printf("77\n");
     // Closing the socket and file:
     fclose(received_file);
     pthread_mutex_unlock(&lock);
-
-    message_to_client = "Transfer sucessfully completed";
+    printf("81\n");
+    message_to_client = "Server: Transfer sucessfully completed";
     send(client_sock, message_to_client, strlen(message_to_client), 0);
-
+    printf("84\n");
 }
 
 
@@ -118,7 +123,7 @@ int main(void) {
         perror("Error while listening");
          exit(EXIT_SUCCESS);
     }
-    printf("\nListening for incoming connections.....\n");
+    printf("\nServer: Listening for incoming connections.....\n");
 
     // Accept an incoming connection:
     while(1){
@@ -127,21 +132,21 @@ int main(void) {
         client_sock = accept(socket_desc, (struct sockaddr *)&client_addr, &client_size);
 
         if (client_sock < 0) {
-            perror("Can't accept");
+            perror("Server: Can't accept");
             exit(EXIT_SUCCESS);
         }
-        printf("Client connected at IP: %s and port: %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        printf("Server: Client connected at IP: %s and port: %i\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
         // Create a new thread to handle the client
         if (pthread_create(&thread_id, NULL, (void *(*)(void *))handle_client, &client_sock) < 0) {
-            perror("Couldn't create thread");
+            perror("Server: Couldn't create thread");
             exit(EXIT_SUCCESS);
         }
         // Wait for the thread to finish
         if (pthread_join(thread_id, NULL) != 0) {
             exit(EXIT_SUCCESS);
         }
-    
+        printf("Waiting for new client connections...\n");
     }
   
     close(client_sock);

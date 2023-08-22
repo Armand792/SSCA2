@@ -29,18 +29,18 @@ int main(void) {
     char message_from_server[1024];
     ssize_t bytes_received;
 
-    printf("Enter the file path and filename: ");
+    printf("Cient: Enter the file path and filename: ");
     scanf("%255s", filepath); 
 
     // Create socket
     socket_desc = socket(AF_INET, SOCK_STREAM, 0);
 
     if (socket_desc < 0) {
-        perror("Unable to create socket");
+        perror("Cient: Unable to create socket");
         return -1;
     }
 
-    printf("Socket created successfully\n");
+    printf("Cient: Socket created successfully\n");
 
     // Set port and IP address to match the server
     server_addr.sin_family = AF_INET;
@@ -49,10 +49,10 @@ int main(void) {
 
     // Send connection request to the server
     if (connect(socket_desc, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        perror("Unable to connect");
+        perror("Cient: Unable to connect");
         return -1;
     }
-    printf("Connected with server successfully\n");
+    printf("Cient: Connected with server successfully\n");
 
     //check if it can send data
     char Authorization[1024]; 
@@ -73,28 +73,19 @@ int main(void) {
 
     // Null-terminate the received data
     message_from_server[bytes_received] = '\0';
-    printf("Received message: [%s]\n", message_from_server);
 
     //Authorazation handling
     if(strcmp(message_from_server,"yes") == 0){
-        printf("You are authorized to send file, sending now...\n");
+        printf("Server: You are authorized to send file, sending now...\n");
         
     }else{
-        printf("You are not authorized to send file\n");
+        printf("Server: You are not authorized to send file\n");
         exit(EXIT_FAILURE);
     }
 
-    FILE *file = fopen(filepath, "wa");
-    if (file == NULL) {
-        perror("Error opening file");
-        return 1;
-    }
-
-    // Sending the filepath as metadata
-    send(socket_desc, filepath, strlen(filepath), 0);
 
     // Open the file to send
-    file_to_send = fopen(filepath, "rb"); // Open the file for binary reading
+    file_to_send = fopen("/Users/armando/Desktop/SSCA2/SSCA2/test.txt", "r"); // Open the file for binary writting
 
     if (file_to_send == NULL) {
         perror("Couldn't open the file for reading");
@@ -104,12 +95,12 @@ int main(void) {
     // Send the file data
     while ((bytes_read = fread(file_buffer, 1, sizeof(file_buffer), file_to_send)) > 0) {
         if (send(socket_desc, file_buffer, bytes_read, 0) < 0) {
-            perror("Can't send file data");
+            perror("CLient: Can't send file data");
             return -1;
         }
     }
 
-    printf("File sent successfully: %s\n", filepath);
+    printf("Client: File sent successfully: %s\n", filepath);
 
     // Close the file and socket
     fclose(file_to_send);
